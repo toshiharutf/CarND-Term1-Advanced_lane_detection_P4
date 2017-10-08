@@ -31,7 +31,7 @@ def pipeLine(img):
     binary_warped = Multifilter(top_down,s_thresh=(210, 255),b_thresh=(155,200),l_thresh=(220,255),sxy_thresh=(30,100), draw=False)
     #fitLines(leftCurve,rightCurve,binary_warped, window_width=50, window_height=120, margin=50,max_offset=60, max_Roffset=500, draw = False)
     if(leftLine.detected==True):
-        lineSearchGuided(binary_warped,leftLine,rightLine,margin = 100,maxOffset=500,debug=False)
+        lineSearchGuided(binary_warped,leftLine,rightLine,margin = 100,maxOffset=500,minOffset=200,debug=False)
     else:
         lineFullSearch(binary_warped,leftLine,rightLine,nwindows = 9, windowWidth=100, minpix=50,debug = False)    
     overImage = drawRegion(img,leftLine,rightLine,Minv)
