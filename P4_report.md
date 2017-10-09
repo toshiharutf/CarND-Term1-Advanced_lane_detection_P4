@@ -53,9 +53,9 @@ Since the image is already rectified, a simple rectangular mask is enough.
 ### b. Color filtering
 In the next step, the images is filterd in order to isolate, as best as possible, the line on the lane. Different colorspaces, and image gradient functions were used. Concretely, the Sobel operator in the **X** direction, combined with color thresholds in the LAB, HLS, and LUV colorspaces were examined. 
 
-The sobelXY did a good job at identifying the lanes, even on low light conditions, but also detected other undesired artifacts. The L-channel in LUV did a good job at identitifying the whites, but did poorly on the yellows. An opposite situation hapenned with the B-channel in LAB, which did better at identifying the yellows. In order to get the best of each filter, they are finally combined on a single binary-image. The color filters added additional points to the sobel filter, an important issue for the next step, for line fitting. 
+The sobelXY did a good job at identifying the lanes, even on low light conditions, but also detected other undesired artifacts. The L-channel in LUV did a good job at identitifying the whites, but did poorly on the yellows. An opposite situation hapenned with the B-channel in LAB, which did better at identifying the yellows. In order to get the best of each filter, they are finally combined on a single binary-image. Some of the ideas for color filtering were obtained from  [https://github.com/jeremy-shannon/CarND-Advanced-Lane-Lines](https://github.com/jeremy-shannon/CarND-Advanced-Lane-Lines).
 
-The code for this step can be found in the files *imageFilter.py* and *filterTest.py", and the result of the filters in the image below.
+The color filters added additional points to the sobel filter, an important issue for the next step, for line fitting. The code for this step can be found in the files *imageFilter.py* and *filterTest.py", and the result of the filters in the image below.
 
 
 ![alt text](report_images/imageFilter.png)
