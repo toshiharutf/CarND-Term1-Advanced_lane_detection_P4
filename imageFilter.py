@@ -8,6 +8,8 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+
 # Create binary thresholded images to isolate lane line pixels
 def abs_sobel_xy(img, sobel_kernel=3, orient='x',sxy_thresh=(0,255)):
     #gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
@@ -64,9 +66,53 @@ def mag_sobel(img, sobel_kernel=11, mag_thresh=(30,100)):
     
     return sxbinary
 
+def roi(img, vertices):
+    """
+    Applies an image mask.
+        Only keeps the region of the image defined by the polygon
+    formed from `vertices`. The rest of the image is set to black.
+    """
+    """defining a blank mask to start with"""
+    mask = np.zeros_like(img)   
+    
+    """defining a 3 channel or 1 channel color to fill the mask with depending
+    on the input image
+    """
+    if len(img.shape) > 2:
+        channel_count = img.shape[2]  # i.e. 3 or 4 depending on your image
+        ignore_mask_color = (255,) * channel_count
+    else:
+        ignore_mask_color = 255
+        
+    """filling pixels inside the polygon defined by "vertices" with the
+    fill color    
+    """
+    cv2.fillPoly(mask, vertices, ignore_mask_color)
+    
+    """returning the image only where mask pixels are nonzero"""
+    masked_image = cv2.bitwise_and(img, mask)
+    
+    return masked_image
 
 def Multifilter(img,s_thresh=(180, 255),b_thresh=(155,200),l_thresh=(225,255),sxy_thresh=(20,100), draw=False):
-
+    
+#    lowerYellow = np.array([22,76,0])
+#    upperYellow = np.array([160,239,100])
+#    lowerWhite = np.array([22,76,0])
+#    upperWhite = np.array([160,239,100])
+#    
+#    yellow = cv2.inRange(img,lowerYellow,upperYellow)
+#    white = cv2.inRange(img,lowerWhite,upperWhite)
+#    colorCombined = cv2.bitwise_or(white, yellow)
+    
+#    middle = img.shape[1]/2
+#    shift = 150
+    sideOffset = 150
+    bottom = 650
+    top = 0
+    vertices = np.array([[(sideOffset,bottom),(sideOffset,top), (img.shape[1]-sideOffset,top), (img.shape[1]-sideOffset,bottom)]], dtype=np.int32)
+    img = roi(img,vertices)
+    
     s_channel = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)[:,:,1]
    
     l_channel = cv2.cvtColor(img, cv2.COLOR_RGB2LUV)[:,:,0]
@@ -84,14 +130,15 @@ def Multifilter(img,s_thresh=(180, 255),b_thresh=(155,200),l_thresh=(225,255),sx
     l_binary[(l_channel >= l_thresh[0]) & (l_channel <= l_thresh[1])] = 1
     
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY).astype(np.float)
-    sobelxy_binary = abs_sobel_xy(s_channel, sobel_kernel=3, orient='x',sxy_thresh=sxy_thresh)
+    sobelxy_binary = abs_sobel_xy(s_channel, sobel_kernel=11, orient='x',sxy_thresh=sxy_thresh)
     sobel_mag = mag_sobel(gray,sobel_kernel=3)
     sobel_dir = dir_sobel(gray)
     #color_binary = np.dstack((u_binary, s_binary, l_binary))
     
     combined_binary = np.zeros_like(s_binary)
- #   combined_binary[(s_binary == 1) | (b_binary == 1) | (sobelxy_binary==1)] = 1
-    combined_binary[(s_binary == 1) | (b_binary == 1) ] = 1
+#    combined_binary[(l_binary == 1) | (b_binary == 1) | (sobelxy_binary==1)] = 1
+    combined_binary[(l_binary == 1) | (b_binary == 1) ] = 1
+#    combined_binary = colorCombined
 
     if (draw == True):
         # Plotting thresholded images

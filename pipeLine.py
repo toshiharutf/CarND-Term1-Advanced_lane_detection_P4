@@ -5,7 +5,7 @@ Created on Sat Oct  7 02:07:56 2017
 @author: Toshiharu
 """
 
-from findLines import find_window_centroids, window_mask, fitLines, Line
+#from findLines3 import find_window_centroids, window_mask, fitLines, Line
 
 from imageProcessing import perspectiveCal,Calibration,birdEye
 

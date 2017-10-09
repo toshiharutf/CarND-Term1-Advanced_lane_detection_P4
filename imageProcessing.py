@@ -8,6 +8,9 @@ Este es un archivo temporal
 # Load calibration images. Show some examples (4 is ok)
 # Save mtx and dist
 
+import cv2
+import numpy as np
+
 def Calibration(rows=6,cols=9,imagesFolder='camera_cal',show=True):
     import numpy as np
     import cv2
@@ -75,9 +78,9 @@ def perspectiveCal(points_orig,points_world,directory):
     print('Saved perspective transformation matrices in:'+ directory+'/perspective.p' )
 
 
+
 def birdEye(img, mtx, dist,M):
-    import cv2
-    
+
     dst = cv2.undistort(img, mtx, dist, None, mtx)
     img_size = (dst.shape[1], dst.shape[0])
     rectified = cv2.warpPerspective(dst, M, img_size, flags=cv2.INTER_LINEAR)

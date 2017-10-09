@@ -61,8 +61,8 @@ from imageFilter import Multifilter
 
 #######################################################################################
 
-def lineFullSearch(binary_warped,leftLine,rightLine,nwindows = 9, windowWidth=100, minpix=50,debug = False): 
-    smoothFactor = 0.8
+def lineFullSearch(binary_warped,leftLine,rightLine,nwindows = 9, windowWidth=100, minpix=50, maxOffset=500,minOffset=200,Rmax =20000 ,debug = False): 
+    smoothFactor = 0.9
     # Reset counter of missed lines
     leftLine.timesMissed = 0
     rightLine.timesMissed = 0
@@ -70,7 +70,7 @@ def lineFullSearch(binary_warped,leftLine,rightLine,nwindows = 9, windowWidth=10
     # Generate an RGB image from a grayscaled one
     out_img = np.dstack((binary_warped, binary_warped, binary_warped))*255
     
-    histogram = np.sum(binary_warped[int(binary_warped.shape[0]/2):,:], axis=0)
+    histogram = np.sum(binary_warped[int((3/4)*binary_warped.shape[0]):,:], axis=0)
     midpoint = np.int(histogram.shape[0]/2)
     
     leftLine.base = np.argmax(histogram[:midpoint])
@@ -153,25 +153,33 @@ def lineFullSearch(binary_warped,leftLine,rightLine,nwindows = 9, windowWidth=10
 #    temp = (leftLine.current_fit[:2]+rightLine.current_fit[:2])/2
 #    leftLine.current_fit[:2] = rightLine.current_fit[:2] = temp
     
-    #Find the Line parameters in meters
+                #Find the Line parameters in meters
     leftLineFit_world   = np.polyfit(leftCentroids[:,1]*leftLine.y_factor , leftCentroids[:,0]*leftLine.x_factor, 2)
     rightLineFit_world  = np.polyfit(rightCentroids[:,1]*rightLine.y_factor, rightCentroids[:,0]*rightLine.x_factor, 2)  
     y_eval = binary_warped.shape[0]/2*leftLine.y_factor  # evaluate at the middle of the figure
     leftLine.radius = ((1 + (2*leftLineFit_world[0]*y_eval + leftLineFit_world[1])**2)**1.5) / np.absolute(2*leftLineFit_world[0])
     rightLine.radius =  ((1 + (2*rightLineFit_world[0]*y_eval + rightLineFit_world[1])**2)**1.5) / np.absolute(2*rightLineFit_world[0])
 
-    
-   
-#    leftLine.best_fit = leftLine.current_fit
-#    rightLine.best_fit = rightLine.current_fit
-    
+
+    if( (   (rightLine.basePosCurrent()-leftLine.basePosCurrent())<maxOffset) & 
+            ( (rightLine.basePosCurrent()-leftLine.basePosCurrent())>minOffset) &
+            ( (rightLine.current_fit[2]-leftLine.current_fit[2] )<maxOffset) &
+            ( (rightLine.current_fit[2]-leftLine.current_fit[2] )>minOffset) &
+            (leftLine.radius < Rmax) &
+            (rightLine.radius < Rmax) ) :
+        
+        leftLine.best_fit = leftLine.current_fit
+        rightLine.best_fit = rightLine.current_fit
+        
+
+        
     if(leftDetectedWindows>4 ):
         leftLine.detected = True  # And go to the lineSearchGuided function 
-        leftLine.best_fit = leftLine.best_fit*(1-smoothFactor) + leftLine.current_fit*smoothFactor
+#        leftLine.best_fit = leftLine.current_fit
 
     if( rightDetectedWindows>4 ):
         rightLine.detected = True
-        rightLine.best_fit = rightLine.best_fit*(1-smoothFactor) + rightLine.current_fit*smoothFactor
+#        rightLine.best_fit = rightLine.current_fit
         
         
     ##########################################        
@@ -194,8 +202,8 @@ def lineFullSearch(binary_warped,leftLine,rightLine,nwindows = 9, windowWidth=10
  
     
     
-def lineSearchGuided(binary_warped,leftLine,rightLine,margin = 100,minPoints=2000, maxOffset=500,minOffset=200,debug=False):
-    smoothFactor = 0.8
+def lineSearchGuided(binary_warped,leftLine,rightLine,margin = 100,minPoints=2000, maxOffset=500,minOffset=200,Rmax =20000 ,debug=False):
+    smoothFactor = 0.7
     # Assume you now have a new warped binary image 
     # from the next frame of video (also called "binary_warped")
     # It's now much easier to find line pixels!
@@ -216,16 +224,28 @@ def lineSearchGuided(binary_warped,leftLine,rightLine,margin = 100,minPoints=200
     lefty = nonzeroy[left_lane_inds] 
     rightx = nonzerox[right_lane_inds]
     righty = nonzeroy[right_lane_inds]
-    
+ 
         # Fit a second order polynomial to each
     if( (len(lefty)>0) & (len(righty)>0) ):
         leftLine.current_fit = np.polyfit(lefty, leftx, 2)
         rightLine.current_fit = np.polyfit(righty, rightx, 2)
+        
+         #Find the Line parameters in meters
+        leftLineFit_world   = np.polyfit(lefty*leftLine.y_factor , leftx*leftLine.x_factor, 2)
+        rightLineFit_world  = np.polyfit(righty*rightLine.y_factor,rightx*rightLine.x_factor, 2) 
+    #    temp = (leftLineFit_world[:2]+rightLineFit_world[:2])/2
+    #    leftLineFit_world[:2] = rightLineFit_world[:2] = temp
+        y_eval = (binary_warped.shape[0]/2)*leftLine.y_factor  # evaluate at the middle of the figure
+        leftLine.radius = ((1 + (2*leftLineFit_world[0]*y_eval + leftLineFit_world[1])**2)**1.5) / np.absolute(2*leftLineFit_world[0])
+        rightLine.radius =  ((1 + (2*rightLineFit_world[0]*y_eval + rightLineFit_world[1])**2)**1.5) / np.absolute(2*rightLineFit_world[0])
+
     
     if( (   (rightLine.basePosCurrent()-leftLine.basePosCurrent())>maxOffset) | 
             ( (rightLine.basePosCurrent()-leftLine.basePosCurrent())<minOffset) |
             ( (rightLine.current_fit[2]-leftLine.current_fit[2] )>maxOffset) |
-            ( (rightLine.current_fit[2]-leftLine.current_fit[2] )<minOffset) ) :
+            ( (rightLine.current_fit[2]-leftLine.current_fit[2] )<minOffset) |
+            (leftLine.radius > Rmax) |
+            (rightLine.radius > Rmax) ) :
         
         leftLine.detected = False
         rightLine.detected = False  # Directly call for a fullSearchScan
@@ -238,14 +258,7 @@ def lineSearchGuided(binary_warped,leftLine,rightLine,margin = 100,minPoints=200
         # Interpolation with last known parameters
         leftLine.best_fit = leftLine.best_fit*(1-smoothFactor) + leftLine.current_fit*smoothFactor
         rightLine.best_fit = rightLine.best_fit*(1-smoothFactor) + rightLine.current_fit*smoothFactor
-        #Find the Line parameters in meters
-        leftLineFit_world   = np.polyfit(lefty*leftLine.y_factor , leftx*leftLine.x_factor, 2)
-        rightLineFit_world  = np.polyfit(righty*rightLine.y_factor,rightx*rightLine.x_factor, 2) 
-    #    temp = (leftLineFit_world[:2]+rightLineFit_world[:2])/2
-    #    leftLineFit_world[:2] = rightLineFit_world[:2] = temp
-        y_eval = binary_warped.shape[0]/2*leftLine.y_factor  # evaluate at the middle of the figure
-        leftLine.radius = ((1 + (2*leftLineFit_world[0]*y_eval + leftLineFit_world[1])**2)**1.5) / np.absolute(2*leftLineFit_world[0])
-        rightLine.radius =  ((1 + (2*rightLineFit_world[0]*y_eval + rightLineFit_world[1])**2)**1.5) / np.absolute(2*rightLineFit_world[0])
+
         
     else:
         leftLine.timesMissed +=1
@@ -303,8 +316,8 @@ def lineSearchGuided(binary_warped,leftLine,rightLine,margin = 100,minPoints=200
 
 ################################################################################
 ##### Testing
-################################################################################        
-# Load camera lens distortion correction parameters
+################################################################################
+## Load camera lens distortion correction parameters
 #from imageProcessing import perspectiveCal,Calibration,birdEye        
 #        
 #import pickle
