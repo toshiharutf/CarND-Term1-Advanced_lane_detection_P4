@@ -69,7 +69,8 @@ def lineFullSearch(binary_warped,leftLine,rightLine,nwindows = 9, windowWidth=10
     
     # Generate an RGB image from a grayscaled one
     out_img = np.dstack((binary_warped, binary_warped, binary_warped))*255
-    
+
+    #Look for concentration of points in the first 3/4 of the image.
     histogram = np.sum(binary_warped[int((3/4)*binary_warped.shape[0]):,:], axis=0)
     midpoint = np.int(histogram.shape[0]/2)
     
