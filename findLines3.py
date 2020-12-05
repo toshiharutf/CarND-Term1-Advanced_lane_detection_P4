@@ -210,7 +210,9 @@ def lineSearchGuided(binary_warped,leftLine,rightLine,margin = 100,minPoints=200
     nonzero = binary_warped.nonzero()
     nonzeroy = np.array(nonzero[0])
     nonzerox = np.array(nonzero[1])
-    
+
+    # search in an area delimited by the previously found lines from the lineFullSearch function.
+    # The area is delimited by the "+-margin" paramater
     left_lane_inds = ((nonzerox > (leftLine.best_fit[0]*(nonzeroy**2) + leftLine.best_fit[1]*nonzeroy + 
     leftLine.best_fit[2] - margin)) & (nonzerox < (leftLine.best_fit[0]*(nonzeroy**2) + 
     leftLine.best_fit[1]*nonzeroy + leftLine.best_fit[2] + margin))) 
